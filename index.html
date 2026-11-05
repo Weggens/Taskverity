@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TASKVERITY | Smart Task Verification</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7fb;color:#172b46;font-family:Arial,sans-serif}
+header{background:#102b50;color:white;padding:22px 6%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.logo{font-size:25px;font-weight:bold;letter-spacing:2px}
+header small{color:#cbd5e1}
+main{max-width:1100px;margin:30px auto;padding:0 18px}
+h2{margin-top:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:24px}
+.stat,.panel,.task{background:white;border-radius:13px;padding:20px;box-shadow:0 4px 18px #102b5010}
+.stat strong{display:block;font-size:30px;color:#1764b0;margin-top:8px}
+.panel{margin-bottom:24px}
+input,textarea{width:100%;padding:12px;margin:8px 0 15px;border:1px solid #ccd6e2;border-radius:8px;font:inherit}
+textarea{min-height:95px}
+button{border:0;border-radius:8px;padding:11px 16px;background:#1764b0;color:white;cursor:pointer;font-weight:bold}
+button:disabled{background:#aab7c7;cursor:not-allowed}
+.tasks{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.task h3{margin-top:0}
+.muted{color:#64748b;font-size:13px}
+.status{font-weight:bold;color:#1764b0}
+.progress{height:9px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin:10px 0}
+.bar{height:100%;background:#16865d;transition:width .2s}
+.step{display:block;padding:9px 0;font-size:14px}
+.step input{width:auto;margin:0 8px 0 0}
+.danger{background:#b42318;margin-top:8px}
+footer{text-align:center;padding:25px;color:#64748b}
+@media(max-width:600px){.stats{grid-template-columns:1fr}.logo{font-size:21px}}
+</style>
+</head>
+<body>
+
+<header>
+ <div>
+ <div class="logo">TASKVERITY</div>
+  <small>Every task deserves proof of completion.</small>
+ </div>
+ <div>Smart Task Management</div>
+</header>
+
+<footer>
+TASKVERITY © 2026 | Created by WEGGENS HOPE | A product of WEGGENS HOPE GLOBAL
+</footer>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const STEPSTAMP_SUPABASE_URL = "https://bngxujvsstdpzoafznfb.supabase.co";
+  const STEPSTAMP_SUPABASE_KEY = "sb_publishable_u6O9_5-p4ULP2NBLJaH53A_q2rz1PLP";
+
+  const stepstampClient = window.supabase.createClient(
+    STEPSTAMP_SUPABASE_URL,
+    STEPSTAMP_SUPABASE_KEY
+  );
+
+  window.stepstampClient = stepstampClient;
+console.log("TASKVERITY connected to Supabase library.");
+stepstampClient
+  .from("profiles")
+  .select("id")
+  .limit(1)
+  .then(({ data, error }) => {
+    if (error) {
+      console.error("Database test failed:", error.message);
+    } else {
+console.log("TASKVERITY database connection successful!", data);
+    }
+  });
+</script>
+<!-- TASKVERITY AUTHENTICATION -->
+<section id="authSection" style="max-width:420px;margin:40px auto;padding:25px;background:#fff;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+<h2>Welcome to TASKVERITY</h2>
+  <p>Create your account or sign in to continue.</p>
+
+  <h3>Create Account</h3>
+  <input id="signupName" type="text" placeholder="Full name" style="width:100%;padding:12px;margin:8px 0;">
+  <input id="signupEmail" type="email" placeholder="Email address" style="width:100%;padding:12px;margin:8px 0;">
+  <input id="signupPassword" type="password" placeholder="Password (at least 6 characters)" style="width:100%;padding:12px;margin:8px 0;">
+  <button onclick="stepstampSignUp()" style="width:100%;padding:12px;margin:8px 0;cursor:pointer;">Create Account</button>
+
+  <hr>
+
+  <h3>Already registered? Login</h3>
+  <input id="loginEmail" type="email" placeholder="Email address" style="width:100%;padding:12px;margin:8px 0;">
+  <input id="loginPassword" type="password" placeholder="Password" style="width:100%;padding:12px;margin:8px 0;">
+  <button onclick="stepstampLogin()" style="width:100%;padding:12px;margin:8px 0;cursor:pointer;">Login</button>
+
+  <p id="authMessage" style="font-weight:bold;"></p>
+</section>
+
+<script>
+async function stepstampSignUp() {
+  const name = document.getElementById("signupName").value.trim();
+  const email = document.getElementById("signupEmail").value.trim();
+  const password = document.getElementById("signupPassword").value;
+
+  const message = document.getElementById("authMessage");
+
+  if (!name || !email || password.length < 6) {
+    message.textContent = "Enter your name, a valid email and a password of at least 6 characters.";
+    return;
+  }
+
+  const { data, error } = await stepstampClient.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: name },
+      emailRedirectTo: "http://127.0.0.1:5500"
+    }
+  });
+
+  if (error) {
+    message.textContent = error.message;
+    return;
+  }
+
+  message.textContent = "Account created! Check your email for the confirmation link.";
+}
+
+async function stepstampLogin() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const message = document.getElementById("authMessage");
+
+  const { data, error } = await stepstampClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    message.textContent = error.message;
+    return;
+  }
+
+ window.location.href = "dashboard.html";
+}
+</script>
+
+</body>
+</html>

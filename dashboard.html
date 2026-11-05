@@ -1,0 +1,579 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TASKVERITY | Smart Task Verification</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7fb;color:#172b46;font-family:Arial,sans-serif}
+header{background:#102b50;color:white;padding:22px 6%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.logo{font-size:25px;font-weight:bold;letter-spacing:2px}
+header small{color:#cbd5e1}
+main{max-width:1100px;margin:30px auto;padding:0 18px}
+h2{margin-top:0}
+.stats{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+ gap:18px;
+ margin-bottom:28px;
+}
+.stat,.panel,.task{
+ background:white;
+ border-radius:16px;
+ padding:22px;
+ box-shadow:0 5px 22px rgba(16,43,80,0.07);
+ border:1px solid #e8eef5;
+}
+.stat strong{display:block;font-size:30px;color:#1764b0;margin-top:8px}
+.panel{margin-bottom:24px}
+input,textarea{width:100%;padding:12px;margin:8px 0 15px;border:1px solid #ccd6e2;border-radius:8px;font:inherit}
+textarea{min-height:95px}
+button{
+ border:0;
+ border-radius:9px;
+ padding:12px 18px;
+ background:#1764b0;
+ color:white;
+ cursor:pointer;
+ font-weight:bold;
+ transition:background .2s,transform .2s;
+}
+
+button:hover{
+ background:#104f91;
+ transform:translateY(-1px);
+}
+button:disabled{background:#aab7c7;cursor:not-allowed}
+.tasks{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.task{
+ transition:transform .2s,box-shadow .2s;
+}
+
+.task:hover{
+ transform:translateY(-3px);
+ box-shadow:0 9px 26px rgba(16,43,80,0.12);
+}
+
+.task h3{
+ margin-top:0;
+ color:#102b50;
+ font-size:19px;
+}
+.muted{color:#64748b;font-size:13px}
+.status{
+ font-weight:bold;
+ color:#1764b0;
+ font-size:14px;
+}
+
+.progress{
+ height:12px;
+ background:#e8eef5;
+ border-radius:20px;
+ overflow:hidden;
+ margin:12px 0;
+}
+
+.bar{
+ height:100%;
+ background:linear-gradient(90deg,#1764b0,#16865d);
+ border-radius:20px;
+ transition:width .4s ease;
+}
+.step{display:block;padding:9px 0;font-size:14px}
+.step input{width:auto;margin:0 8px 0 0}
+.danger{background:#b42318;margin-top:8px}
+footer{text-align:center;padding:25px;color:#64748b}
+@media(max-width:600px){
+ .stats{
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+ }
+
+ .stat{
+  padding:15px;
+ }
+
+ .stat strong{
+  font-size:24px;
+ }
+
+ .logo{
+  font-size:21px;
+ }
+
+ header{
+  padding:18px 5%;
+ }
+
+ main{
+  margin:20px auto;
+  padding:0 12px;
+ }
+
+ .tasks{
+  grid-template-columns:1fr;
+ }
+}
+/* TASKVERITY Task Card Improvements */
+
+.task textarea{
+  min-height:100px;
+  resize:vertical;
+  background:#f8fafc;
+  border:1px solid #dbe4ef;
+  border-radius:10px;
+}
+
+.task .step{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:11px 0;
+  border-bottom:1px solid #eef2f7;
+}
+
+.task .step input{
+  accent-color:#1764b0;
+}
+
+.task .status{
+  margin-top:16px;
+  padding:9px 12px;
+  background:#eff6ff;
+  border-radius:8px;
+  display:inline-block;
+}
+
+</style>
+</head>
+<body>
+
+
+<header>
+ <div>
+<div class="logo">TASKVERITY</div>
+  <small>Track • Complete • Grow</small>
+ </div>
+
+ <div class="header-right">
+  <span>Smart Task Management</span>
+  <button id="logoutBtn" onclick="stepstampLogout()">
+   Logout
+  </button>
+ </div>
+</header>
+
+
+<main>
+ <h2>Welcome to your dashboard</h2>
+ <p class="muted">Manage activities, monitor progress and verify completed work.</p>
+
+ 
+<section class="stats">
+
+  <div class="stat">
+    <span>Total Tasks</span>
+    <strong id="total">0</strong>
+    <small>All created tasks</small>
+  </div>
+
+  <div class="stat">
+    <span>Verified</span>
+    <strong id="verified">0</strong>
+    <small>Successfully completed</small>
+  </div>
+
+  <div class="stat">
+    <span>Pending</span>
+    <strong id="pending">0</strong>
+    <small>Tasks awaiting completion</small>
+  </div>
+
+  <div class="stat">
+    <span>Overall Progress</span>
+    <strong id="overallProgress">0%</strong>
+    <small>Your progress so far</small>
+  </div>
+
+</section>
+
+ 
+<section class="panel create-panel">
+
+  <div class="panel-heading">
+    <h2>Create a New Task</h2>
+    <p>Organise your work, assign responsibility and track every step.</p>
+  </div>
+
+  <form id="taskForm">
+
+    <label for="taskName">Task name</label>
+    <input
+      id="taskName"
+      required
+      placeholder="e.g. Complete ICT assignment"
+    >
+
+    <label for="assignee">Assigned person</label>
+    <input
+      id="assignee"
+      required
+      placeholder="Enter person's name"
+    >
+
+    <label for="instructions">Task instructions</label>
+    <small class="muted">Enter one step per line.</small>
+
+    <textarea
+      id="instructions"
+      required
+      placeholder="Open Microsoft Word&#10;Create a document&#10;Save your work"
+    ></textarea>
+
+    <button type="submit">+ Create Task</button>
+
+  </form>
+</section>
+
+
+ <h2>Task management</h2>
+ <div id="tasks" class="tasks"></div>
+</main>
+
+<footer>
+<footer>
+  TASKVERITY © 2026 | Created by WEGGENS HOPE | A product of WEGGENS HOPE GLOBAL
+</footer>
+</footer>
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const STEPSTAMP_SUPABASE_URL = "https://bngxujvsstdpzoafznfb.supabase.co";
+  const STEPSTAMP_SUPABASE_KEY = "sb_publishable_u6O9_5-p4ULP2NBLJaH53A_q2rz1PLP";
+
+  const stepstampClient = window.supabase.createClient(
+    STEPSTAMP_SUPABASE_URL,
+    STEPSTAMP_SUPABASE_KEY
+  );
+</script>
+
+<script>
+const KEY = "stepstamp_v11";
+
+let tasks;
+
+try {
+ tasks = JSON.parse(localStorage.getItem(KEY) ||
+                    localStorage.getItem("stepstamp") || "[]");
+ if (!Array.isArray(tasks)) tasks = [];
+} catch {
+ tasks = [];
+}
+
+tasks = tasks.map(t => ({
+ ...t,
+ steps: Array.isArray(t.steps) ? t.steps.map(s => ({
+  text: typeof s === "string" ? s : s.text,
+  done: typeof s === "string" ? false : !!s.done
+ })) : [],
+ evidence: t.evidence || "",
+ status: t.status || "In progress"
+}));
+
+function save(){
+ localStorage.setItem(KEY,JSON.stringify(tasks));
+}
+
+function element(tag,text,className){
+ const el=document.createElement(tag);
+ if(text!==undefined) el.textContent=text;
+ if(className) el.className=className;
+ return el;
+}
+
+function render(){
+ const container=document.getElementById("tasks");
+ container.replaceChildren();
+
+ const done=tasks.filter(t=>t.status==="Verified").length;
+ document.getElementById("total").textContent=tasks.length;
+ document.getElementById("verified").textContent=done;
+ document.getElementById("pending").textContent=tasks.length-done;
+const totalSteps = tasks.reduce(
+ (sum, task) => sum + task.steps.length, 0
+);
+
+const completedSteps = tasks.reduce(
+ (sum, task) => sum + task.steps.filter(s => s.done).length, 0
+);
+
+const overallPercentage = totalSteps
+ ? Math.round(completedSteps / totalSteps * 100)
+ : 0;
+
+document.getElementById("overallProgress").textContent =
+ overallPercentage + "%";
+ if(tasks.length===0){
+  container.appendChild(element("p","No tasks yet. Create your first task.","muted"));
+  return;
+ }
+
+ tasks.forEach((task,index)=>{
+  const card=element("article",undefined,"task");
+  card.appendChild(element("h3",task.name));
+  card.appendChild(element("p","Assigned to: "+task.assignee,"muted"));
+
+  const completed=task.steps.filter(s=>s.done).length;
+  const percentage=task.steps.length?
+   Math.round(completed/task.steps.length*100):0;
+
+card.appendChild(element("p",`Progress: ${completed}/${task.steps.length} steps (${percentage}%)`,"muted"));
+  const progress=element("div",undefined,"progress");
+  const bar=element("div",undefined,"bar");
+  bar.style.width=percentage+"%";
+  progress.appendChild(bar);
+  card.appendChild(progress);
+
+  const status=element("p","Status: "+task.status,"status");
+  card.appendChild(status);
+
+  task.steps.forEach((step,i)=>{
+   const label=element("label",undefined,"step");
+   const check=element("input");
+   check.type="checkbox";
+   check.checked=step.done;
+   check.disabled=task.status==="Verified";
+  check.addEventListener("change", async ()=>{
+    task.steps[i].done = check.checked;
+
+    const { error } = await stepstampClient
+      .from("tasks")
+      .update({ steps: task.steps })
+      .eq("id", task.id);
+
+    if (error) {
+      alert("Could not save progress: " + error.message);
+      task.steps[i].done = !check.checked;
+      render();
+      return;
+    }
+
+    save();
+    render();
+});
+   label.append(check,document.createTextNode(step.text));
+   card.appendChild(label);
+  });
+
+  card.appendChild(element("p","Evidence / completion explanation:","muted"));
+  const evidence=element("textarea");
+  evidence.placeholder="Describe the work completed...";
+  evidence.value=task.evidence;
+  evidence.disabled=task.status==="Verified";
+ evidence.addEventListener("change", async ()=>{
+   task.evidence = evidence.value;
+
+   const { error } = await stepstampClient
+     .from("tasks")
+     .update({ evidence: task.evidence })
+     .eq("id", task.id);
+
+   if (error) {
+     alert("Could not save evidence: " + error.message);
+     render();
+     return;
+   }
+
+   save();
+
+   verify.disabled = task.status === "Verified" ||
+     completed !== task.steps.length || !task.evidence.trim();
+});
+  card.appendChild(evidence);
+
+  const verify=element("button","Verify completion");
+  verify.disabled=task.status==="Verified" ||
+   completed!==task.steps.length || !task.evidence.trim();
+
+  verify.addEventListener("click", async ()=>{
+   if(task.steps.every(s=>s.done) && task.evidence.trim()){
+
+    const { error } = await stepstampClient
+      .from("tasks")
+     .update({
+  status: "Verified",
+  verified_at: new Date().toISOString()
+})
+      .eq("id", task.id);
+
+    if(error){
+      alert("Verification failed: " + error.message);
+      return;
+    }
+
+    task.status = "Verified";
+    task.verifiedAt = new Date().toLocaleString();
+
+    save();
+    render();
+   }
+});
+  card.appendChild(verify);
+
+  if(task.verifiedAt){
+   card.appendChild(element("p","Verified on: "+task.verifiedAt,"muted"));
+  }
+
+  const remove=element("button","Delete task","danger");
+  remove.addEventListener("click", async ()=>{
+   if(confirm("Delete this task?")){
+
+    const { error } = await stepstampClient
+      .from("tasks")
+      .delete()
+      .eq("id", task.id);
+
+    if(error){
+      alert("Could not delete task: " + error.message);
+      return;
+    }
+
+    tasks.splice(index,1);
+    save();
+    render();
+   }
+});
+  card.appendChild(remove);
+
+  container.appendChild(card);
+ });
+}
+
+document.getElementById("taskForm").addEventListener("submit", async e=>{
+ e.preventDefault();
+
+ const name=document.getElementById("taskName").value.trim();
+ const assignee=document.getElementById("assignee").value.trim();
+ const steps=document.getElementById("instructions").value
+  .split("\n").map(s=>s.trim()).filter(Boolean);
+
+ if(!name || !assignee || !steps.length) return;
+
+ const newSteps = steps.map(text => ({
+  text,
+  done: false
+}));
+
+const { data: { user }, error: userError } =
+  await stepstampClient.auth.getUser();
+
+if (userError || !user) {
+  alert("Please log in again.");
+  window.location.href = "index.html";
+  return;
+}
+
+const { data: savedTask, error } = await stepstampClient
+  .from("tasks")
+  .insert({
+    user_id: user.id,
+    title: name,
+    assignee: assignee,
+    steps: newSteps,
+    evidence: "",
+    status: "In progress"
+  })
+  .select()
+  .single();
+
+if (error) {
+  alert("Could not save task: " + error.message);
+  return;
+}
+
+tasks.unshift({
+  id: savedTask.id,
+  name: savedTask.title,
+  assignee: savedTask.assignee,
+  steps: savedTask.steps,
+  evidence: savedTask.evidence,
+  status: savedTask.status
+});
+
+e.target.reset();
+render();
+});
+async function loadTasksFromSupabase() {
+ const { data: { session }, error: sessionError } =
+  await stepstampClient.auth.getSession();
+
+console.log("SESSION CHECK:", session);
+console.log("SESSION ERROR:", sessionError);
+
+const user = session?.user;
+const userError = sessionError;
+
+  if (userError || !user) {
+    alert("Please log in again.");
+    window.location.href = "index.html";
+    return;
+  }
+
+  const { data, error } = await stepstampClient
+    .from("tasks")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    alert("Could not load tasks: " + error.message);
+    return;
+  }
+
+  tasks = (data || []).map(t => ({
+    id: t.id,
+    name: t.title,
+    assignee: t.assignee || "",
+    steps: Array.isArray(t.steps) ? t.steps : [],
+    evidence: t.evidence || "",
+    status: t.status || "In progress",
+    verifiedAt: t.verified_at || ""
+  }));
+
+  render();
+}
+
+loadTasksFromSupabase();
+</script>
+ // Protect the dashboard from users who are not logged in
+stepstampClient.auth.getSession().then(({ data, error }) => {
+  if (error || !data.session) {
+    alert("Your session has expired. Please log in again.");
+    window.location.href = "index.html";
+  }
+});
+
+  window.stepstampClient = stepstampClient;
+console.log("TASKVERITY connected to Supabase library.");
+stepstampClient
+  .from("profiles")
+  .select("id")
+  .limit(1)
+  .then(({ data, error }) => {
+    if (error) {
+      console.error("Database test failed:", error.message);
+    } else {
+   console.log("TASKVERITY database connection successful!", data);
+    }
+  });
+async function stepstampLogout() {
+  await stepstampClient.auth.signOut();
+  window.location.href = "index.html";
+}
+</script>
+
+</body>
+</html>
